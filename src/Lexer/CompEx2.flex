@@ -15,6 +15,7 @@
 
 //Nao faz nada quando termina o arquivo
 %eof{
+	System.out.println("Leitura terminada.");
 %eof}
 
 /*-*
@@ -24,8 +25,8 @@ WHITESPACE      = [ \n\t\r]           //espacos em branco, quebra de linha, tabu
 COMMENT         = [/*([^]|[\r\n])+*/] // qualquer texto entre /* e *
 ID              = ([A-Za-z_][A-Za-z_0-9]*)
 LITINTEGER      = ([1-9][0-9]*)|0
-LITFLOAT        = (({LITINTEGER}).([0-9]*))|(E("+"|"-")({LITINTEGER}))
-
+LITFLOAT        = (({LITINTEGER})+"."+([0-9]*))|("E"+("+"|"-")+({LITINTEGER}))
+UNKNOWN         = ("//"~\n)
 
 
 %%
@@ -40,3 +41,4 @@ LITFLOAT        = (({LITINTEGER}).([0-9]*))|(E("+"|"-")({LITINTEGER}))
 {ID}            { System.out.println("Token ID ("+yytext()+")"); }
 {WHITESPACE}    { /*Fazer nada*/ }
 {COMMENT}       { System.out.println("Token Comentario reconhecido e ignorado."); }
+{UNKNOWN}       { System.out.println("!!ERRO!! Token Desconhecido"); }
