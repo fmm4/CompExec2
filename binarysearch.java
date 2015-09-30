@@ -140,7 +140,6 @@ class BS{
 	    k = k - 1 ;
 	}
 
-	çç
 	return 0 ;	
     }
 }
