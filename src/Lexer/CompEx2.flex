@@ -26,7 +26,7 @@ COMMENT         = ("/*"+([^]|[\r\n])+"*/")
 ID              = ([A-Za-z_][A-Za-z_0-9]*)
 LITINTEGER      = ([1-9][0-9]*)|0
 LITFLOAT        = (({LITINTEGER})+"."+([0-9]*+[1-9]))|("E"+("+"|"-")+({LITINTEGER}))
-UNKNOWN         = ("//")
+UNKNOWN         = ("//") // Utilizar ("//"~\n) e passar novamente pelo JFlex se quiser ignorar a linha toda.
 
 %%
 /**
@@ -35,7 +35,7 @@ UNKNOWN         = ("//")
 ";"|"."|","|"="|"("|")"|"{"|"}|""["|"]" {System.out.println("Token Delimitador	("+yytext()+")");}
 "class"|"public"|"extends"|"static"|"void"|"int"|"boolean"|"while"|"if"|"else"|"return"|"false"|"true"|"this"|"new" {System.out.println("Token Palavra Chave	("+yytext()+")");}
 "||"|"&&"|"=="|"!="|"<"|"<="|">"|">="|"+"|"-"|"*"|"/"|"%"|"!" {System.out.println("Token Operador		("+yytext()+")");}
-{LITINTEGER}    { System.out.println("Token Literal Inteiro	("+yytext()+")"); }
+{LITINTEGER}    { System.out.println("Token Literal Inteiro	("+yytext()+")"); }	
 {LITFLOAT}      { System.out.println("Token Literal Float	("+yytext()+")"); }
 {ID}            { System.out.println("Token ID		("+yytext()+")"); }
 {WHITESPACE}    { /*Fazer nada*/ }
