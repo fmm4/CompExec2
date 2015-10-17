@@ -1,43 +1,41 @@
+package main;
 import java_cup.runtime.ComplexSymbolFactory;
 import java_cup.runtime.ComplexSymbolFactory.Location;
 import java_cup.runtime.Symbol;
+import java.lang.*;
+import java.io.InputStreamReader;
 
 %%
-%line
-%column
-%unicode
-%public
 %class Lexer
 %implements sym
+%public
+%unicode
+%line
+%column
 %cup
-
-/* 
-Declarações
-
-código dentro de %{ e %}, é copiado para a classe gerada. 
-a ideia é utilizar este recurso para declarar atributos e métodos usados nas ações 
-*/ 
+%char
 %{
-	public Lexer(ComplexSymbolFactory sf, java.io.inputStream is){
-		this(is);
-		symbolFactory = sf;
-	}
-	public Lexer(CComplexSymbolFactory sf, java.io.Reader reader){
-		this(reader);
-		symbolFactory = sf;
-	}
 	
-	private StringBuffer sb;
+
+    public Lexer(ComplexSymbolFactory sf, java.io.InputStream is){
+		this(is);
+        symbolFactory = sf;
+    }
+	public Lexer(ComplexSymbolFactory sf, java.io.Reader reader){
+		this(reader);
+        symbolFactory = sf;
+    }
+    
+    private StringBuffer sb;
     private ComplexSymbolFactory symbolFactory;
     private int csline,cscolumn;
-	
-	public Symbol symbol(String name, int code){
+
+    public Symbol symbol(String name, int code){
 		return symbolFactory.newSymbol(name, code,
 						new Location(yyline+1,yycolumn+1, yychar), // -yylength()
 						new Location(yyline+1,yycolumn+yylength(), yychar+yylength())
 				);
     }
-	
     public Symbol symbol(String name, int code, String lexem){
 	return symbolFactory.newSymbol(name, code, 
 						new Location(yyline+1, yycolumn +1, yychar), 
@@ -45,38 +43,34 @@ a ideia é utilizar este recurso para declarar atributos e métodos usados nas a
     }
     
     protected void emit_warning(String message){
-    	System.out.println("Aviso: " + message + " em : 2 "+ 
+    	System.out.println("scanner warning: " + message + " at : 2 "+ 
     			(yyline+1) + " " + (yycolumn+1) + " " + yychar);
     }
     
     protected void emit_error(String message){
-    	System.out.println("Erro na leitura: " + message + " em : 2" + 
+    	System.out.println("scanner error: " + message + " at : 2" + 
     			(yyline+1) + " " + (yycolumn+1) + " " + yychar);
     }
 %}
 
 
-%eof{
-	System.out.println("Leitura terminada.");
-%eof}
-
 %eofval{
-	return symbolFactory.newSymbol("EOF",sym.EOF);
+    return symbolFactory.newSymbol("EOF",sym.EOF);
 %eofval}
+
+%state CODESEG
 
 /*-*
  * PADROES NOMEADOS:
  */
 WHITESPACE      = [ \n\t\r]           
-COMMENT         = ("/*"+([^]|[\r\n])+"*/") 
+COMMENT         = ("/*"+([^]|[\r\n])+"*/") |("//"~\n)
 ID              = ([A-Za-z_][A-Za-z_0-9]*)
 LITINTEGER      = ([1-9][0-9]*)|0
 LITFLOAT        = (({LITINTEGER})+"."+([0-9]*+[1-9]))|("E"+("+"|"-")+({LITINTEGER}))
 
 %%
-/**
- * REGRAS LEXICAS:
- */
+
 ";"
 {return symbolFactory.newSymbol("PONTOVIRGULA",PONTOVIRGULA);}
 "."
@@ -158,11 +152,11 @@ LITFLOAT        = (({LITINTEGER})+"."+([0-9]*+[1-9]))|("E"+("+"|"-")+({LITINTEGE
 "*"
 {return symbolFactory.newSymbol("A_MULT",A_MULT);} 
 "/"
-{return symbolFactory.newSymbol("A_DIV",A_DIVI);} 
+{return symbolFactory.newSymbol("A_DIV",A_DIV);} 
 "%"
-{return symbolFactory.newSymbol("A_MOD",A_MODU);} 
+{return symbolFactory.newSymbol("A_MOD",A_MOD);} 
 "!"
-{return symbolFactory.newSymbol("A_FAT",A_FATO);} 
+{return symbolFactory.newSymbol("A_FAT",A_FAT);} 
 
 {LITINTEGER}    
 { return symbolFactory.newSymbol("LITERAL_INTEIRO",LITERAL_INTEIRO);}	
@@ -171,7 +165,7 @@ LITFLOAT        = (({LITINTEGER})+"."+([0-9]*+[1-9]))|("E"+("+"|"-")+({LITINTEGE
 {ID}       
 { return symbolFactory.newSymbol("IDENTIFICADOR",IDENTIFICADOR);}
 {COMMENT}       
-{ return symbolFactory.newSymbol("COMENTARIO",COMENTARIO); }
+{}
 {WHITESPACE}    
 { /*Ignorado*/ }
 .				

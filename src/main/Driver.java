@@ -1,18 +1,13 @@
 package main;
 
-import java.util.List;
-
-import java_cup.runtime.Symbol;
+import main.parser;
+import java_cup.runtime.*;
 
 class Driver {
 
 	public static void main(String[] args) throws Exception {
-		ParserCup parser = new ParserCup();
+		parser parser = new parser();
 		Symbol x = parser.parse();
-		if (x.value instanceof List<?>) {
-			System.out.print(x);
-		}
-
+		System.out.print(parser.parse());
 	}
-
 }

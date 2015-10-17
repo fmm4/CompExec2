@@ -1,0 +1,148 @@
+package main;
+
+import java_cup.runtime.*;
+import main.Lexer;
+import java.io.IOException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.List;
+import java.util.LinkedList;
+//class AnalisadorSintatico
+
+parser code {:
+  protected Lexer lexer;
+:}
+
+init with {:
+  ComplexSymbolFactory f = new ComplexSymbolFactory();
+  symbolFactory = f;
+  File file = new File("input.txt");
+  FileInputStream fis = null;
+  try {
+    fis = new FileInputStream(file);
+  } catch (IOException e) {
+    e.printStackTrace();
+  } 
+  lexer = new Lexer(f,fis);
+:};
+scan with {: return lexer.next_token(); :};
+
+terminal	String	LITERAL_INTEIRO;
+terminal	String	LITERAL_FLUTUANTE;
+terminal	String	IDENTIFICADOR;
+terminal	String	COMENTARIO;
+//Oh deus. E longo mais e mais facil debugar.
+terminal			PONTOVIRGULA;
+terminal			PONTO;
+terminal			VIRGULA;
+terminal			IGUAL;
+terminal			PARENT_ESQ;
+terminal			PARENT_DIR;
+terminal			CURLY_ESQ;
+terminal			CURLY_DIR;
+terminal			COLCHE_ESQ;
+terminal			COLCHE_DIR;
+terminal			K_CLASS;
+terminal			K_PUBLIC;
+terminal			K_EXTENDS;
+terminal			K_STATIC;
+terminal			K_WHILE;
+terminal			K_IF;
+terminal			K_ELSE;
+terminal			K_RETURN;
+terminal			K_THIS;
+terminal			K_NEW;
+terminal			K_MAIN;
+terminal			K_LENGTH;
+terminal			K_PRINT;
+terminal			OP_OR;
+terminal			OP_AND;
+terminal			OP_EQ;
+terminal			OP_DIF;
+terminal			OP_LT;
+terminal			OP_LET;
+terminal			OP_GT;
+terminal			OP_GET;
+terminal			T_VOID;
+terminal			T_INT;
+terminal			T_BOOLEAN;
+terminal			T_STRING;
+terminal			B_TRUE;
+terminal			B_FALSE;
+terminal			A_PLUS;
+terminal			A_MINUS;
+terminal			A_MULT;
+terminal			A_DIV;
+terminal			A_MOD;
+terminal			A_FAT;
+
+non terminal String	Goal,MainClass,ClassDeclaration,VarDeclaration,MethodDeclaration,Type,Statement,Expression,Identifier;
+//novos
+non terminal String ExprExtra,ExprColchet,JavaMethods,MethodStatement,SubExprFuncVar,ExprFuncVar,ExprOp,SubStatement,MethodVarDecl,MethodInputExtr,MethodInpDecl,Extend,ClassVariables,ClassMethods;
+
+precedence left A_MULT,A_FAT,A_MINUS,A_PLUS;
+precedence right COLCHE_ESQ,PONTO,OP_AND,OP_LT;
+
+start with Goal;
+
+Goal				::=	MainClass:mc ClassDeclaration:cd		{:mc+=cd; System.out.print(mc);; :};
+MainClass			::=	K_CLASS Identifier:i CURLY_ESQ K_PUBLIC K_STATIC T_VOID K_MAIN PARENT_ESQ T_STRING COLCHE_ESQ COLCHE_DIR Identifier:i2 PARENT_DIR CURLY_ESQ Statement:st CURLY_DIR CURLY_DIR
+						{: RESULT = "class "+i+" { public static void main ( String [] "+i2+"){ "+st+"}}"; :};
+ClassDeclaration	::=	ClassDeclaration:c K_CLASS Identifier:i Extend:e CURLY_ESQ ClassVariables:cv ClassMethods:cm CURLY_DIR
+						{: RESULT = c+" class "+i+" "+e+"{"+cv+" "+cm+"}"; :}
+					|	;
+Extend				::=	K_EXTENDS Identifier:i						{: RESULT = "extends ".concat(i); :}
+					|	;
+ClassVariables		::=	VarDeclaration:v ClassVariables:c			{: RESULT = v+" "+c; :}
+					|	;
+ClassMethods		::= MethodDeclaration:m ClassMethods:c			{: RESULT = m+" "+c; :}
+					|	;
+VarDeclaration		::=	Type:t Identifier:i PONTOVIRGULA			{: RESULT = t+" "+i+";\n"; :};
+MethodDeclaration	::=	K_PUBLIC Type:t Identifier:i PARENT_ESQ MethodInpDecl:m PARENT_DIR CURLY_ESQ MethodVarDecl:v MethodStatement:s K_RETURN Expression:ex PONTOVIRGULA CURLY_DIR
+						{: RESULT = "public "+t+" "+i+"("+m+"){"+v+" "+s+" returns "+ex+";}\n"; :};
+MethodInpDecl		::=	Type:t Identifier:i MethodInputExtr:m											{: RESULT = t+" "+i+" "+m; :}
+					|	;
+MethodInputExtr		::= VIRGULA Type:t Identifier:i MethodInputExtr:m									{: RESULT = ","+t+" "+i+" "+m; :}
+					|	;
+MethodVarDecl		::= MethodVarDecl:m VarDeclaration:v												{: RESULT = m+v; :}							
+					|	;
+MethodStatement		::= Statement:s MethodStatement:m													{: RESULT = s+m; :}
+					|	;
+Type				::=	T_INT COLCHE_ESQ COLCHE_DIR														{: RESULT = "int[]"; :}
+					|	T_BOOLEAN																		{: RESULT = "boolean"; :}
+					|	T_INT																			{: RESULT = "int"; :}		
+					|	Identifier:i																	{: RESULT = i; :};
+Statement			::=	CURLY_ESQ SubStatement:s CURLY_DIR												{: RESULT = "{"+s+"}"; :}
+					|	K_IF PARENT_ESQ Expression:e PARENT_DIR Statement:s1 K_ELSE Statement:s2		{: RESULT = "if("+e+") "+s1+" else "+s2; :}
+					|	K_WHILE PARENT_ESQ Expression:e PARENT_DIR Statement:s							{: RESULT = "while("+e+")"+s; :}				
+					|	K_PRINT PARENT_ESQ Expression:e PARENT_DIR PONTOVIRGULA							{: RESULT = "System.out.print("+e+");\n"; :}
+					|	Identifier:i IGUAL Expression:e PONTOVIRGULA									{: RESULT = i+" ="+e+";\n"; :}
+					|	Identifier:i COLCHE_ESQ Expression:e COLCHE_DIR IGUAL Expression:d PONTOVIRGULA	{: RESULT = i+"["+e+"]= "+d+";\n"; :};
+SubStatement		::=	Statement:s SubStatement:sa							{: RESULT = s+" "+sa; :}
+					|	;
+Expression			::=	Expression:e ExprExtra:x							{: RESULT = e+" "+x; :}
+					|	LITERAL_INTEIRO:l									{: RESULT = l; :}
+					|	B_TRUE												{: RESULT = "TRUE"; :}
+					|	B_FALSE												{: RESULT = "FALSE"; :}
+					|	Identifier:i										{: RESULT = i; :}
+					|	K_THIS												{: RESULT = "this"; :}
+					|	K_NEW T_INT ExprColchet:e							{: RESULT = "new int"+e; :}
+					|	K_NEW Identifier:i PARENT_ESQ PARENT_DIR			{: RESULT = "new "+i+"()"; :}
+					|	A_FAT Expression:e									{: RESULT = "!"+e; :}
+					|	PARENT_ESQ Expression:e PARENT_DIR					{: RESULT = "("+e+")"; :};
+ExprExtra			::=	ExprOp:o Expression:e								{: RESULT = o+" "+e; :}									
+					|	ExprColchet:e										{: RESULT = e; :}						
+					|	PONTO JavaMethods:j									{: RESULT = "."+j; :};			
+ExprColchet			::=	COLCHE_ESQ Expression:e COLCHE_DIR					{: RESULT = "["+e+"]"; :};				
+JavaMethods			::= K_LENGTH											{: RESULT = "length"; :}		
+					| 	Identifier:i PARENT_ESQ ExprFuncVar:e PARENT_DIR	{: RESULT = i+"("+e+")"; :}; 
+ExprFuncVar			::=	Expression:e SubExprFuncVar:f			{: RESULT = e+" "+f; :}
+					|	;
+SubExprFuncVar		::=	VIRGULA Expression:e SubExprFuncVar:f	{: RESULT = ","+e+" "+f; :}
+					|	;
+ExprOp				::=	OP_AND					{: RESULT = "&&"; :}
+					|	OP_LT					{: RESULT = "<"; :}
+					|	A_PLUS					{: RESULT = "+"; :}
+					|	A_MINUS					{: RESULT = "-"; :}
+					|	A_MULT					{: RESULT = "*";:};	
+Identifier			::=	IDENTIFICADOR:e			{: RESULT = (String) e; :}; 
