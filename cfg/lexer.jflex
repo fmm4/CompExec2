@@ -156,17 +156,17 @@ LITFLOAT        = (({LITINTEGER})+"."+([0-9]*+[1-9]))|("E"+("+"|"-")+({LITINTEGE
 "%"
 {return symbolFactory.newSymbol("A_MOD",A_MOD);} 
 "!"
-{return symbolFactory.newSymbol("A_FAT",A_FAT);} 
+{return symbolFactory.newSymbol("OP_NOT",OP_NOT);} 
 
 {LITINTEGER}    
-{ return symbolFactory.newSymbol("LITERAL_INTEIRO",LITERAL_INTEIRO);}	
+{ return symbolFactory.newSymbol("LITERAL_INTEIRO",LITERAL_INTEIRO,yytext());}	
 {LITFLOAT}      
-{ return symbolFactory.newSymbol("LITERAL_FLUTUANTE",LITERAL_FLUTUANTE);}
+{ return symbolFactory.newSymbol("LITERAL_FLUTUANTE",LITERAL_FLUTUANTE,yytext());}
 {ID}       
-{ return symbolFactory.newSymbol("IDENTIFICADOR",IDENTIFICADOR);}
+{ return symbolFactory.newSymbol("IDENTIFICADOR",IDENTIFICADOR,yytext());}
 {COMMENT}       
 {}
 {WHITESPACE}    
 { /*Ignorado*/ }
 .				
-{ throw new Error("Token nao identificado: <"+yytext()+">");}
+{ System.out.println("\nERRO:"++yytext() );}

@@ -74,13 +74,13 @@ terminal			A_MINUS;
 terminal			A_MULT;
 terminal			A_DIV;
 terminal			A_MOD;
-terminal			A_FAT;
+terminal			OP_NOT;
 
 non terminal String	Goal,MainClass,ClassDeclaration,VarDeclaration,MethodDeclaration,Type,Statement,Expression,Identifier;
 //novos
 non terminal String ExprExtra,ExprColchet,JavaMethods,MethodStatement,SubExprFuncVar,ExprFuncVar,ExprOp,SubStatement,MethodVarDecl,MethodInputExtr,MethodInpDecl,Extend,ClassVariables,ClassMethods;
 
-precedence left A_MULT,A_FAT,A_MINUS,A_PLUS;
+precedence left A_MULT,OP_NOT,A_MINUS,A_PLUS;
 precedence right COLCHE_ESQ,PONTO,OP_AND,OP_LT;
 
 start with Goal;
@@ -90,24 +90,24 @@ MainClass			::=	K_CLASS Identifier:i CURLY_ESQ K_PUBLIC K_STATIC T_VOID K_MAIN P
 						{: RESULT = "class "+i+" { public static void main ( String [] "+i2+"){ "+st+"}}"; :};
 ClassDeclaration	::=	ClassDeclaration:c K_CLASS Identifier:i Extend:e CURLY_ESQ ClassVariables:cv ClassMethods:cm CURLY_DIR
 						{: RESULT = c+" class "+i+" "+e+"{"+cv+" "+cm+"}"; :}
-					|	;
+					|	{: RESULT = ""; :};
 Extend				::=	K_EXTENDS Identifier:i						{: RESULT = "extends ".concat(i); :}
-					|	;
+					|	{: RESULT = ""; :};
 ClassVariables		::=	VarDeclaration:v ClassVariables:c			{: RESULT = v+" "+c; :}
-					|	;
+					|	{: RESULT = ""; :};
 ClassMethods		::= MethodDeclaration:m ClassMethods:c			{: RESULT = m+" "+c; :}
-					|	;
+					|	{: RESULT = ""; :};
 VarDeclaration		::=	Type:t Identifier:i PONTOVIRGULA			{: RESULT = t+" "+i+";\n"; :};
 MethodDeclaration	::=	K_PUBLIC Type:t Identifier:i PARENT_ESQ MethodInpDecl:m PARENT_DIR CURLY_ESQ MethodVarDecl:v MethodStatement:s K_RETURN Expression:ex PONTOVIRGULA CURLY_DIR
 						{: RESULT = "public "+t+" "+i+"("+m+"){"+v+" "+s+" returns "+ex+";}\n"; :};
 MethodInpDecl		::=	Type:t Identifier:i MethodInputExtr:m											{: RESULT = t+" "+i+" "+m; :}
-					|	;
+					|	{: RESULT = ""; :};
 MethodInputExtr		::= VIRGULA Type:t Identifier:i MethodInputExtr:m									{: RESULT = ","+t+" "+i+" "+m; :}
-					|	;
+					|	{: RESULT = ""; :};
 MethodVarDecl		::= MethodVarDecl:m VarDeclaration:v												{: RESULT = m+v; :}							
-					|	;
+					|	{: RESULT = ""; :};
 MethodStatement		::= Statement:s MethodStatement:m													{: RESULT = s+m; :}
-					|	;
+					|	{: RESULT = ""; :};
 Type				::=	T_INT COLCHE_ESQ COLCHE_DIR														{: RESULT = "int[]"; :}
 					|	T_BOOLEAN																		{: RESULT = "boolean"; :}
 					|	T_INT																			{: RESULT = "int"; :}		
@@ -119,7 +119,7 @@ Statement			::=	CURLY_ESQ SubStatement:s CURLY_DIR												{: RESULT = "{"+s+
 					|	Identifier:i IGUAL Expression:e PONTOVIRGULA									{: RESULT = i+" ="+e+";\n"; :}
 					|	Identifier:i COLCHE_ESQ Expression:e COLCHE_DIR IGUAL Expression:d PONTOVIRGULA	{: RESULT = i+"["+e+"]= "+d+";\n"; :};
 SubStatement		::=	Statement:s SubStatement:sa							{: RESULT = s+" "+sa; :}
-					|	;
+					|	{: RESULT = ""; :};
 Expression			::=	Expression:e ExprExtra:x							{: RESULT = e+" "+x; :}
 					|	LITERAL_INTEIRO:l									{: RESULT = l; :}
 					|	B_TRUE												{: RESULT = "TRUE"; :}
@@ -128,7 +128,7 @@ Expression			::=	Expression:e ExprExtra:x							{: RESULT = e+" "+x; :}
 					|	K_THIS												{: RESULT = "this"; :}
 					|	K_NEW T_INT ExprColchet:e							{: RESULT = "new int"+e; :}
 					|	K_NEW Identifier:i PARENT_ESQ PARENT_DIR			{: RESULT = "new "+i+"()"; :}
-					|	A_FAT Expression:e									{: RESULT = "!"+e; :}
+					|	OP_NOT Expression:e									{: RESULT = "!"+e; :}
 					|	PARENT_ESQ Expression:e PARENT_DIR					{: RESULT = "("+e+")"; :};
 ExprExtra			::=	ExprOp:o Expression:e								{: RESULT = o+" "+e; :}									
 					|	ExprColchet:e										{: RESULT = e; :}						
@@ -137,9 +137,9 @@ ExprColchet			::=	COLCHE_ESQ Expression:e COLCHE_DIR					{: RESULT = "["+e+"]"; 
 JavaMethods			::= K_LENGTH											{: RESULT = "length"; :}		
 					| 	Identifier:i PARENT_ESQ ExprFuncVar:e PARENT_DIR	{: RESULT = i+"("+e+")"; :}; 
 ExprFuncVar			::=	Expression:e SubExprFuncVar:f			{: RESULT = e+" "+f; :}
-					|	;
+					|	{: RESULT = ""; :};
 SubExprFuncVar		::=	VIRGULA Expression:e SubExprFuncVar:f	{: RESULT = ","+e+" "+f; :}
-					|	;
+					|	{: RESULT = ""; :};
 ExprOp				::=	OP_AND					{: RESULT = "&&"; :}
 					|	OP_LT					{: RESULT = "<"; :}
 					|	A_PLUS					{: RESULT = "+"; :}
