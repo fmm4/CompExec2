@@ -13,7 +13,7 @@ import java.io.InputStreamReader;
  * <a href="http://www.jflex.de/">JFlex</a> 1.6.1
  * from the specification file <tt>C:/UFPE/2015.2/IF688 - Teo. Implement. Ling. Computacionais/Workspace/Compilador_Minijava/cfg/lexer.jflex</tt>
  */
-public class Lexer implements sym, java_cup.runtime.Scanner {
+public class Lexer implements ParserSym, java_cup.runtime.Scanner {
 
   /** This character denotes the end of file */
   public static final int YYEOF = -1;
@@ -772,7 +772,7 @@ public class Lexer implements sym, java_cup.runtime.Scanner {
       if (zzInput == YYEOF && zzStartRead == zzCurrentPos) {
         zzAtEOF = true;
             zzDoEOF();
-          {     return symbolFactory.newSymbol("EOF",sym.EOF);
+          {     return symbolFactory.newSymbol("EOF",ParserSym.EOF);
  }
       }
       else {

@@ -1,13 +1,18 @@
 package main;
 
-import main.parser;
+import main.ParserCup;
 import java_cup.runtime.*;
+import ast.*;
+import visitor.*;
 
 class Driver {
 
 	public static void main(String[] args) throws Exception {
-		parser parser = new parser();
+		ParserCup parser = new ParserCup();
 		Symbol x = parser.parse();
-		System.out.print(parser.parse());
+		//programa na forma de AST
+		Program prog = (Program) parser.parse().value;
+		//chama o visitor de pretty print
+		prog.accept(new PrettyPrintVisitor()); 
 	}
 }
