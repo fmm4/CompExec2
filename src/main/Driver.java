@@ -12,7 +12,10 @@ class Driver {
 		Symbol x = parser.parse();
 		//programa na forma de AST
 		Program prog = (Program) parser.parse().value;
+		BuildSymbolTableVisitor stVis = new BuildSymbolTableVisitor();
+		prog.accept(stVis); 
 		//chama o visitor de pretty print
-		prog.accept(new PrettyPrintVisitor()); 
+		prog.accept(new TypeCheckVisitor(stVis.getSymbolTable()));
+		int a = 0;
 	}
 }

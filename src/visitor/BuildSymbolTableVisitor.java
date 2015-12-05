@@ -1,7 +1,8 @@
 package visitor;
 
-import java.lang.reflect.Method;
 
+import symboltable.*;
+import symboltable.Class;
 import ast.And;
 import ast.ArrayAssign;
 import ast.ArrayLength;
@@ -34,6 +35,7 @@ import ast.Program;
 import ast.This;
 import ast.Times;
 import ast.True;
+import ast.Type;
 import ast.VarDecl;
 import ast.While;
 
@@ -55,24 +57,40 @@ public class BuildSymbolTableVisitor implements Visitor {
 	// MainClass m;
 	// ClassDeclList cl;
 	public void visit(Program n) {
+		db("[INICIO CONSTRUCAO DE TABELA DE SIMBOLOS]");
 		n.m.accept(this);
 		for (int i = 0; i < n.cl.size(); i++) {
 			n.cl.elementAt(i).accept(this);
 		}
+		db("[FIM CONSTRUCAO DE TABELA DE SIMBOLOS]");
 	}
 
 	// Identifier i1,i2;
 	// Statement s;
 	public void visit(MainClass n) {
+		db("Add classe principal "+n.i1.s+".");
+		symbolTable.addClass(n.i1.s, null);
+		currClass = symbolTable.getClass(n.i1.s);
+		db("	Add variavel principal "+n.i2.s+". (Adicionado a global de "+n.i1.s+")");
+		currClass.addVar(n.i2.s,new IntegerType());
 		n.i1.accept(this);
 		n.i2.accept(this);
 		n.s.accept(this);
+		currClass = null;
 	}
-
+	
 	// Identifier i;
 	// VarDeclList vl;
 	// MethodDeclList ml;
 	public void visit(ClassDeclSimple n) {
+		if(!symbolTable.containsClass(n.i.s)){
+			symbolTable.addClass(n.i.s, null);
+			currClass = symbolTable.getClass(n.i.s);
+			db("Add classe "+n.i.s+".");
+		}else{
+			db("[IGNORED] Classe declarada duas vezes com nome"+n.i.s+".");
+			return;
+		}
 		n.i.accept(this);
 		for (int i = 0; i < n.vl.size(); i++) {
 			n.vl.elementAt(i).accept(this);
@@ -80,6 +98,7 @@ public class BuildSymbolTableVisitor implements Visitor {
 		for (int i = 0; i < n.ml.size(); i++) {
 			n.ml.elementAt(i).accept(this);
 		}
+		currClass = null;
 	}
 
 	// Identifier i;
@@ -87,19 +106,51 @@ public class BuildSymbolTableVisitor implements Visitor {
 	// VarDeclList vl;
 	// MethodDeclList ml;
 	public void visit(ClassDeclExtends n) {
+		if(!symbolTable.containsClass(n.i.s)){
+			symbolTable.addClass(n.i.s, symbolTable.getClass(n.j.s).getId());
+			currClass = symbolTable.getClass(n.i.s);
+			db("Adicionando subclasse "+n.i.s+". (Subtipo de "+n.j.s+")");
+		}else{
+			db("[IGNORED] Classe declarada duas vezes com nome"+n.i.s+".");
+			return;
+		}
 		n.i.accept(this);
 		n.j.accept(this);
+
 		for (int i = 0; i < n.vl.size(); i++) {
 			n.vl.elementAt(i).accept(this);
 		}
 		for (int i = 0; i < n.ml.size(); i++) {
 			n.ml.elementAt(i).accept(this);
 		}
+		currClass = null;
 	}
 
 	// Type t;
 	// Identifier i;
 	public void visit(VarDecl n) {
+		if(currMethod!=null){
+			if(!currMethod.containsVar(n.i.s)){
+				if(!currMethod.containsParam(n.i.s)){
+					currMethod.addVar(n.i.s,n.t);
+					db("		Add L. variavel "+n.i.s+"(T:"+n.t.toString()+"). (V. Local de "+currMethod.getId()+")");
+				}else{
+					db("[IGNORED]	Variavel "+n.i.s+" possui mesmo nome de parametro de "+currMethod.getId());
+					return;
+				}
+			}else{
+				db("[IGNORED]	Variavel "+n.i.s+" declarada duas vezes em "+currMethod.getId()+".");
+				return;
+			}
+		}else if(currMethod==null){
+			if(!currClass.containsVar(n.i.s)){
+				currClass.addVar(n.i.s, n.t);
+				db("	Add G. variavel "+n.i.s+"(T:"+n.t.toString()+"). (V. Global de "+currClass.getId()+")");
+			}else{
+				db("[IGNORED]Variavel "+n.i.s+" declarada duas vezes em "+currClass.getId()+".");
+				return;
+			}
+		}
 		n.t.accept(this);
 		n.i.accept(this);
 	}
@@ -111,6 +162,20 @@ public class BuildSymbolTableVisitor implements Visitor {
 	// StatementList sl;
 	// Exp e;
 	public void visit(MethodDecl n) {
+		if(currClass!=null){
+			if(!currClass.containsMethod(n.i.s)){
+				currClass = symbolTable.getClass(getCurrentClass());
+				currClass.addMethod(n.i.s,n.t);
+				currMethod = currClass.getMethod(n.i.s);
+				db("	Add metodo "+n.i.s+"(T:"+n.t.toString()+"). (Metodo de "+currClass.getId()+")");
+			}else{
+				db("[IGNORED]Metodo "+n.i.s+" declarado duas vezes em "+currClass.getId()+".");
+				return;
+			}
+		}else{
+			System.out.print("[IGNORED] Metodo "+n.i.s+" declarado fora de classe.");
+			return;
+		}
 		n.t.accept(this);
 		n.i.accept(this);
 		for (int i = 0; i < n.fl.size(); i++) {
@@ -123,6 +188,7 @@ public class BuildSymbolTableVisitor implements Visitor {
 			n.sl.elementAt(i).accept(this);
 		}
 		n.e.accept(this);
+		currMethod = null;
 	}
 
 	// Type t;
@@ -130,6 +196,23 @@ public class BuildSymbolTableVisitor implements Visitor {
 	public void visit(Formal n) {
 		n.t.accept(this);
 		n.i.accept(this);
+		if(!currClass.containsVar(n.i.s)){
+			if(!currMethod.containsParam(n.i.s)){
+				if(!currMethod.containsVar(n.i.s)){
+					currMethod.addParam(n.i.s, n.t);
+					db("		Add parametro "+n.i.s+"(T:"+n.t+"). (Param de "+currMethod.getId()+")");
+				}else{
+					db("[IGNORED]	Metodo ja possui variavel local com nome "+n.i.s);
+					return;
+				}
+			}else{
+				db("[IGNORED]	Ja foi declarado um parametro "+n.i.s+" no metodo.");
+				return;
+			}
+		}else{
+			db("[IGNORED]	Classe "+currClass.getId()+" ja possui variavel com nome "+n.i.s+", igual ao parametro.");
+			return;
+		}
 	}
 
 	public void visit(IntArrayType n) {
@@ -263,6 +346,7 @@ public class BuildSymbolTableVisitor implements Visitor {
 
 	// Identifier i;
 	public void visit(NewObject n) {
+		
 	}
 
 	// Exp e;
@@ -272,5 +356,20 @@ public class BuildSymbolTableVisitor implements Visitor {
 
 	// String s;
 	public void visit(Identifier n) {
+		
+	}
+	
+	////////
+	
+	public String getCurrentClass(){
+		if(currClass==null){
+			return null;
+		}else{
+			return currClass.getId();
+		}
+	}
+	
+	public void db(String s){
+		System.out.println(s);
 	}
 }

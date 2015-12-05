@@ -1,3 +1,8 @@
-/main/
 /ast/
+/main/
 /visitor/
+/Class.class
+/Method.class
+/SymbolTable.class
+/Variable.class
+/symboltable/

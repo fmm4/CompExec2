@@ -50,7 +50,7 @@ public class PrettyPrintVisitor implements Visitor {
 	// Identifier i1,i2;
 	// Statement s;
 	public void visit(MainClass n) {
-		System.out.print("class ");
+		System.out.print("  public static void main (String [] ");
 		n.i1.accept(this);
 		System.out.println(" {");
 		System.out.print("  public static void main (String [] ");

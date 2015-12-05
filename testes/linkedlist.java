@@ -211,9 +211,6 @@ class List{
     }
 }
     
-
-// this class invokes the methods to insert, delete,
-// search and print the linked list
 class LL{
 
     public int Start(){
