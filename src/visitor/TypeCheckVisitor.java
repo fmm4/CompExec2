@@ -40,6 +40,10 @@ import ast.While;
 
 public class TypeCheckVisitor implements TypeVisitor {
 
+	//MUDE PARA FALSO CASO QUEIRA QUE NAO APARECA
+	private boolean displayDebug = false;
+	private boolean displayError = true;
+
 	private SymbolTable symbolTable;
 	
 	private Method currMethod;
@@ -52,12 +56,14 @@ public class TypeCheckVisitor implements TypeVisitor {
 	// MainClass m;
 	// ClassDeclList cl;
 	public Type visit(Program n) {
-		db("[INICIO CHECAGEM DE TIPO] (de agora em diante, so troca de env e erros serao impressos)");
+		if(displayDebug)
+			db("[INICIO CHECAGEM DE TIPO] (de agora em diante, so troca de env e erros serao impressos)");
 		n.m.accept(this);
 		for (int i = 0; i < n.cl.size(); i++) {
 			n.cl.elementAt(i).accept(this);
 		}
-		db("[FIM CHECAGEM DE TIPO]");
+		if(displayDebug)
+			db("[FIM CHECAGEM DE TIPO]");
 		return null;
 	}
 
@@ -66,7 +72,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 	public Type visit(MainClass n) {
 		n.i1.accept(this);
 		currClass = symbolTable.getClass(n.i1.s);
-		db("[EnvChange]New:"+currClass.getId()+", Method: null");
+		if(displayDebug)
+			db("[EnvChange]New:"+currClass.getId()+", Method: null");
 		n.i2.accept(this);
 		n.s.accept(this);
 		return null;
@@ -78,7 +85,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 	public Type visit(ClassDeclSimple n) {
 		n.i.accept(this);
 		currClass = symbolTable.getClass(n.i.s);
-		db("[EnvChange]New:"+currClass.getId()+", Method: null");
+		if(displayDebug)
+			db("[EnvChange]New:"+currClass.getId()+", Method: null");
 		for (int i = 0; i < n.vl.size(); i++) {
 			n.vl.elementAt(i).accept(this);
 		}
@@ -86,7 +94,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 			n.ml.elementAt(i).accept(this);
 		}
 		currClass = null;
-		db("[EnvChange]New:null, Method:null");
+		if(displayDebug)
+			db("[EnvChange]New:null, Method:null");
 		return null;
 	}
 
@@ -98,7 +107,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 		n.i.accept(this);
 		n.j.accept(this);
 		currClass = symbolTable.getClass(n.i.s);
-		db("[EnvChange]New:"+currClass.getId()+", Method: null");
+		if(displayDebug)
+			db("[EnvChange]New:"+currClass.getId()+", Method: null");
 		for (int i = 0; i < n.vl.size(); i++) {
 			n.vl.elementAt(i).accept(this);
 		}		
@@ -106,7 +116,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 			n.ml.elementAt(i).accept(this);
 		}
 		currClass = null;
-		db("[EnvChange]New:null, Method: null");
+		if(displayDebug)
+			db("[EnvChange]New:null, Method: null");
 		return null;
 	}
 
@@ -128,7 +139,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 		Type vt1 = n.t.accept(this);
 		n.i.accept(this);
 		currMethod = currClass.getMethod(n.i.s);
-		db("	[EnvChange]New:"+currClass.getId()+", Method:"+currMethod.getId());
+		if(displayDebug)
+			db("	[EnvChange]New:"+currClass.getId()+", Method:"+currMethod.getId());
 		for (int i = 0; i < n.fl.size(); i++) {
 			n.fl.elementAt(i).accept(this);
 		}
@@ -140,7 +152,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 		}
 		n.e.accept(this);
 		currMethod = null;
-		db("	[EnvChange]New:"+currClass.getId()+", Method: null");
+		if(displayDebug)
+			db("	[EnvChange]New:"+currClass.getId()+", Method: null");
 		return vt1;
 	}
 
@@ -183,7 +196,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 	public Type visit(If n) {
 		Type vt1 = n.e.accept(this);
 		if(!(vt1 instanceof BooleanType)){
-			db("[ERRO]	If cuja condicao nao e booleana");
+			if(displayError)
+				db("[ERRO]	If cuja condicao nao e booleana");
 			return null;
 		}
 		Type vt2 = n.s1.accept(this);
@@ -200,7 +214,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 			vt2 = n.s.accept(this);
 			return new BooleanType();
 		}else{
-			db("[ERRO]	While com condicao nao booleana");
+			if(displayError)
+				db("[ERRO]	While com condicao nao booleana");
 			return null;
 		}
 	}
@@ -225,10 +240,12 @@ public class TypeCheckVisitor implements TypeVisitor {
 			}else if(type1.parent().equals(type2)){
 				return vt1;
 			}
-			db("[ERRO]	Associando objetos de classes nao iguais ou que nao sao subtipo.\n("+type1.getId()+"(Parent:"+getClass(type1.parent()).getId()+") and "+type2.getId()+")");
+			if(displayError)
+				db("[ERRO]	Associando objetos de classes nao iguais ou que nao sao subtipo.\n("+type1.getId()+"(Parent:"+getClass(type1.parent()).getId()+") and "+type2.getId()+")");
 			return null;
 		}else{
-			db("[ERRO]	Tentando associar valor do tipo \n("+n.e+" - "+vt2.toString()+" sendo inserido em "+vt1.toString()+" "+n.i.s+")");
+			if(displayError)
+				db("[ERRO]	Tentando associar valor do tipo \n("+n.e+" - "+vt2.toString()+" sendo inserido em "+vt1.toString()+" "+n.i.s+")");
 			return null;
 		}
 	}
@@ -243,11 +260,13 @@ public class TypeCheckVisitor implements TypeVisitor {
 			if(vt1 instanceof IntArrayType && vt3 instanceof IntegerType){
 				return vt1;
 			}else{
-				db("[ERRO]	Tentando colocar algo de tipos diferentes em um array ("+vt1+" "+n.i.s+" inserido no tipo "+vt3+")");
+				if(displayError)
+					db("[ERRO]	Tentando colocar algo de tipos diferentes em um array ("+vt1+" "+n.i.s+" inserido no tipo "+vt3+")");
 				return null;
 			}
 		}else{
-			db("[ERRO]	Usando algo sem ser um inteiro para especificar uma posicao em um array.");
+			if(displayError)
+				db("[ERRO]	Usando algo sem ser um inteiro para especificar uma posicao em um array.");
 			return null;
 		}
 	}
@@ -259,7 +278,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 		if(symbolTable.compareTypes(vt1, vt2) && vt1 instanceof BooleanType){
 			return new BooleanType();
 		}else{
-			db("[ERRO]	Comparacao AND com tipos diferentes!");
+			if(displayError)
+				db("[ERRO]	Comparacao AND com tipos diferentes!");
 			return null;
 		}
 	}
@@ -271,7 +291,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 		if(vt1 instanceof IntegerType && vt2 instanceof IntegerType){
 			return new BooleanType();
 		}else{
-			db("[ERRO]	Comparacao LT com tipos diferentes! ("+vt1+" < "+vt2+")");
+			if(displayError)
+				db("[ERRO]	Comparacao LT com tipos diferentes! ("+vt1+" < "+vt2+")");
 			return null;
 		}
 	}
@@ -283,7 +304,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 		if(vt1 instanceof IntegerType && vt2 instanceof IntegerType){
 			return new IntegerType();
 		}else{
-			db("[ERRO]	Adicao com tipos nao inteiro! ("+vt1.toString()+" + "+vt2.toString()+")");
+			if(displayError)
+				db("[ERRO]	Adicao com tipos nao inteiro! ("+vt1.toString()+" + "+vt2.toString()+")");
 			return null;
 		}
 	}
@@ -295,7 +317,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 		if(vt1 instanceof IntegerType && vt2 instanceof IntegerType){
 			return new IntegerType();
 		}else{
-			db("[ERRO]	Subtracao com tipos nao inteiro! ("+vt1+" - "+vt2+")");
+			if(displayError)
+				db("[ERRO]	Subtracao com tipos nao inteiro! ("+vt1+" - "+vt2+")");
 			return null;
 		}
 	}
@@ -307,7 +330,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 		if(vt1 instanceof IntegerType && vt2 instanceof IntegerType){
 			return new IntegerType();
 		}else{
-			db("[ERRO]	Multiplicacao com tipos nao inteiro! ("+vt1+"+"+vt2+")");
+			if(displayError)
+				db("[ERRO]	Multiplicacao com tipos nao inteiro! ("+vt1+"+"+vt2+")");
 			return null;
 		}
 	}
@@ -319,7 +343,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 		if(vt2 instanceof IntegerType){
 			return new IntegerType();
 		}else{
-			db("[ERRO]	Tentando usar algo que nao e inteiro para procurar um valor de um array!");
+			if(displayError)
+				db("[ERRO]	Tentando usar algo que nao e inteiro para procurar um valor de um array!");
 			return null;
 		}
 	}
@@ -352,10 +377,12 @@ public class TypeCheckVisitor implements TypeVisitor {
 						n.el.elementAt(i).accept(this);
 					}	
 				}else{
-					db("[ERRO]Nenhum metodo "+n.i.s+"encontrado na classe "+((IdentifierType) callerType).s+".");
+					if(displayError)
+						db("[ERRO]Nenhum metodo "+n.i.s+"encontrado na classe "+((IdentifierType) callerType).s+".");
 				}
 			}else{
-				db("[ERRO]Nenhuma classe "+((IdentifierType) callerType).s+" encontrada.");
+				if(displayError)
+					db("[ERRO]Nenhuma classe "+((IdentifierType) callerType).s+" encontrada.");
 			}
 		}
 		return vt1;
@@ -393,7 +420,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 		if(getClass(n.i.s)!=null){
 			return getClass(n.i.s).type();
 		}else{
-			db("[ERRO]		Nao achada tipo de classe "+n.i.s+".");
+			if(displayError)
+				db("[ERRO]		Nao achada tipo de classe "+n.i.s+".");
 			return null;
 		}
 	}
@@ -404,7 +432,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 		if(vt1 instanceof BooleanType){
 			return new BooleanType();
 		}else{
-			db("[ERRO]	Booleano NOT sendo usado em algo nao booleano");
+			if(displayError)
+				db("[ERRO]	Booleano NOT sendo usado em algo nao booleano");
 			return null;
 		}
 	}
@@ -444,7 +473,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 		if(symbolTable.containsClass(vN)){
 			return symbolTable.getClass(vN).type();
 		}
-		db("[ERRO]		Nao foi encontrado identifier "+vN+" (Current env Method:"+currMethod.getId()+", Class:"+currClass.getId()+")");
+		if(displayError)
+			db("[ERRO]		Nao foi encontrado identifier "+vN+" (Current env Method:"+currMethod.getId()+", Class:"+currClass.getId()+")");
 		return null;
 
 	}
@@ -453,7 +483,8 @@ public class TypeCheckVisitor implements TypeVisitor {
 		if(symbolTable.containsClass(cN)){
 			return symbolTable.getClass(cN);
 		}else{
-			db("[ERRO]Nao foi encontrada classe com nome "+cN);
+			if(displayError)
+				db("[ERRO]Nao foi encontrada classe com nome "+cN);
 			return null;
 		}
 	}
